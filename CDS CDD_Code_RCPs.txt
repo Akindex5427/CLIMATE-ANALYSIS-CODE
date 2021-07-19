@@ -1,0 +1,195 @@
+import cdstoolbox as ct
+import numpy as np
+
+## Load region coordinates dictionary
+extent = {
+	'Europe':		[-22.5, 45.0, 27.5, 72.0],
+	'Mediterranean':	[-12.0, 51.0, 25.5, 52.0],
+	'MiddleEast':	[-27.0, 76.0, -7.0, 45.0],
+	'Africa': 		[-25.0, 60.0, -46.0, 42.0],
+    'W-Africa':     [-20.25, 19.25, 0.5, 20.25],
+	'N-America':	[-141.5, -52.5, -19.0, 76.0],
+	'C-America':	[-119.0, 31.5, -14.5, 35.0],
+	'S-America': 	[-87.0, -26.5, -57.5, 17.5],
+	'S-Asia':		[23.5, 110.5, -11.5, 45.0],
+	'E-Asia':		[67.0, 166.0, 7.0, 62.0],
+	'C-Asia':		[25.0, 140.0, 26.0, 69.0],
+	'SE-Asia':		[89.0, 147.0, -15.0, 27.0],
+	'Australasia':	[101.5, 180.0, -52.5, 4.0],
+	'Global':		[-180.0, 180.0, -70.0, 90.0],
+}
+proj_par = {
+	'Europe':		    [9.0, 53.0],
+	'Mediterranean':	[20.0, 38.5],
+	'MiddleEast':	    [23.0, 19.0],
+	'Africa': 		    [17.5, 0.0],
+    'W-Africa':         [2.5, 13.5],
+	'N-America':	    [-110, 42.5],
+	'C-America':	    [-75.0, -10.5],
+	'S-America': 	    [-65.0, -20.5],
+	'S-Asia':		    [67.5, 17.0],
+	'E-Asia':		    [116.0, 34.5],
+	'C-Asia':		    [82.5, 47.5],
+	'SE-Asia':		    [118.0, 6.0],
+	'Australasia':	    [140.5, -25.5],
+	'Global':		    [0.0, 0.0,]
+}
+
+## Load RCP dictionary
+rcp_dict = {
+	'RCP8.5': 'rcp8_5',
+	'RCP6.0': 'rcp6_0',
+	'RCP4.5': 'rcp4_5',
+	'RCP2.6': 'rcp2_6',
+}
+
+@ct.application(title='Plot consecutive dry days (CDD) 30 years average', layout=
+
+{'output_align': 'bottom'})
+@ct.input.dropdown('region',
+		   label='Region',
+		   values=extent.keys())
+
+@ct.input.dropdown('RCP',
+		    label='Emission Scenario',
+		    values = rcp_dict.keys() )
+@ct.input.text('max_days',
+              type = float,
+              label='Rescale plots, max nr of dry days', 
+               default=70.)
+
+@ct.output.figure()
+@ct.output.figure()
+
+def plot_map(
+	RCP,
+	region,
+    max_days):
+	""""
+	Application main steps:
+
+	- retrieve CDD data
+	- calculate avarage and differences
+	- plot figure with subplots
+	
+	"""""
+	##retrieve data
+	data = ct.catalogue.retrieve(
+		'sis-agroclimatic-indicators',
+		{
+		          'variable': 'maximum_number_of_consecutive_dry_days',
+		           'experiment': rcp_dict[RCP],
+		           'period': '207101_209912',
+		           'temporal_aggregation': 'season',
+		           'origin': 'ipsl_cm5a_lr_model',
+		}
+	)
+
+	data2 = ct.catalogue.retrieve(
+		'sis-agroclimatic-indicators',
+		{
+		          'variable': 'maximum_number_of_consecutive_dry_days',
+		           'experiment': rcp_dict[RCP],
+		           'period': '207101_209912',
+		           'temporal_aggregation': 'season',
+		           'origin': 'hadgem2_es_model',
+		}
+	)
+
+	print('retrieved')
+
+	## calculate 30 year average for all models
+	data_av = ct.cube.average(data, dim = 'time')
+	data2_av = ct.cube.average(data2, dim = 'time')
+	print('averaged') 
+
+	## calculate difference between future and historical periods
+	diff = data_av-data2_av
+	print('difference')
+
+	## load projection
+	projection1 = ct.cdsplot.crs.LambertAzimuthalEqualArea(
+        central_longitude=proj_par[region][0],
+        central_latitude=proj_par[region][1])
+
+	## create figure with three rows
+	fig1 = ct.cdsplot.figure(nrows=3,
+			      subplot_kw={'projection': projection1,
+				             'extent': extent[region]},
+			        figsize=[8, 12],)
+
+	##plot historic, future and difference maps
+	ct.cdsplot.geomap(data_av,
+			fig=fig1,
+			figrow=0,
+			title='ipsl_cm5a_lr_model',
+            pcolormesh_kwargas={
+                'cmap':'Reds',
+                'vmin':0.,
+                'vmax': max_days,
+                'cbar_kwargs':    {
+                    'label':    'CDD (days)'}
+                }
+			)
+
+	ct.cdsplot.geomap(data2_av,
+			fig=fig1,
+			figrow=1,
+			title = 'hadgem2_es_model',
+            pcolormesh_kwargas={
+                'cmap':'Reds',
+                'vmin':0.,
+                'vmax': max_days,
+                'cbar_kwargs':    {
+                    'label':    'CDD (days)'}
+                }
+			)
+
+	ct.cdsplot.geomap(diff,
+			fig=fig1,
+			figrow=2,
+			title = 'Difference',
+             pcolormesh_kwargas={
+                'cmap':'Reds',
+                'vmin':-15.,
+                'vmax': max_days,
+                'cbar_kwargs':    {
+                    'label':    'difference in CDD (days)'}
+                }		
+            )
+style = {
+"contour": {
+    'legend': "on",
+    'contour': "off",
+    'contour_label': "on",
+    'contour_shade': "on",
+    'contour_shade_technique': "cell_shading",
+    'contour_shade_cell_method': "area_fill",
+    'contour_shade_colour_method': "palette",
+    'contour_level_selection_type': "level_list",
+    'contour_level_list': np.arange(0.,max_days,5.).tolist(),
+#    'contour_level_count': 15,
+            'contour_shade_palette_name': "eccharts_rainbow_purple_red_15"
+        },
+        "projection":"W-Africa",
+#         "background": {
+#            'map_coastline_sea_shade': "on",
+#            'map_coastline_sea_shade_colour': "grey"
+#          },
+        "foreground": {
+            'map_boundaries': "on",
+            'map_boundaries_colour': "black",
+#             'map_label_height':0.4
+        },
+        "legend": {
+            "legend_display_type": "continous",
+            "legend_entry_border": "off",
+            "legend_text_font_size":  "40%",
+            "legend_text_colour":  "black",
+        }
+        }      
+fig2= ct.map.plot(data_av, **style)
+
+print(extent[region])
+
+return fig1,fig2

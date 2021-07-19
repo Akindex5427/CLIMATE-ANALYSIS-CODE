@@ -1,0 +1,69 @@
+import cdstoolbox as ct
+variable_dict = {'heavy precipitation days': 'heavy_precipitation_days',
+	           'summer days': 'summer_days',
+	           'ice days': 'ice_days',}
+
+variable_dict2 = {'growing season length': 'growing_season_length'}
+
+variable_dict3 = {'cold spell duration index': cold_spell_duration_index',
+	              'warm and wet days': 'warm_and_wet_days',}
+
+var_dict = {'heavy precipitation days': 'heavy_precipitation_days',
+	  'ice days':'ice_days',
+	  'summer days': 'summer_days',
+	  'cold spell duration index': 'cold_spell_duration_index',
+	  'warm and wet days': 'warm_and_wet_days',}
+
+rcp_dict = {'RCP8.5': 'rcp8_5',
+	   'RCP6.0': 'rcp6_0',
+	   'RCP4.5': 'rcp4_5',
+	   'RCP2.6': 'rcp2_6',}
+
+time_dict = {'2071-2100': '207101_209912',
+	     '2041-2071': 204101_207012',
+	     '2011-2041': 201101_204012, }
+
+temp_dict = {'10 days': '10_days',
+	      'Seaon': 'season',
+	      'Annual': 'annual', }
+
+@ct.application(title='Agroclimatic indicators'
+	             layout={'output_align': 'bottom'})
+
+@ct.input.dropdown('region',
+		     default='W-Africa')
+
+@ct.input.dropdown('temp',
+		    label='temporal aggregation',
+		    values=temp_dict.keys(),
+		     link=True
+		     default='10 days', 
+		      description = 'Aggregation over timeperiod',
+		          help='e.g. number of precipitation days over 10
+days or maximum number of consecutive frost days per season)
+
+@ct.input.dropdown('var',
+		    label = 'variable',
+		    when='10 days',
+		    values=variable_dict.keys(), )
+
+@ct.input.dropdown('var',
+		    label = 'variable',
+		    when='Annual',
+		    values=variable_dict.keys(), )
+
+@ct.input.dropdown('var',
+		    label = 'variable',
+		    when='Season',
+		    values=variable_dict.keys(), )
+
+@ct.input.dropdown('RCP', 
+		    label = 'experiment',
+		    values = time_dict.keys(), )
+
+@ct.input.dropdown('time',
+		    label = '30 year period',
+		    values = time_dict.keys() )
+
+
+	

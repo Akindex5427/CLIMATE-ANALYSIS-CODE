@@ -1,0 +1,59 @@
+import cdstoolbox as ct
+
+
+@ct.application(title='Plot Map')
+@ct.input.dropdown('variable', values=[
+    'total precipitation',
+])
+@ct.output.figure()
+def plot_map(variable):
+    """
+    Application main steps:
+
+    - set the application layout with output at the bottom
+    - select a variable name from a list in the dropdown menu
+    - retrieve the selected variable
+    - compose a title
+    - show the result on a map using the chosen title
+
+    """
+
+    data = ct.catalogue.retrieve(
+        'reanalysis-era5-single-levels',
+        {
+            'variable': variable,
+            'product_type': 'reanalysis',
+            'year': [
+                    '2000', '2001', '2002', '2003',
+                    '2004', '2005', '2006', '2007',
+                    ],
+            'month': '3',
+            'day': [
+                   '01', '02', '03', '04', '05',
+                   '06', '07', '08', '09', '10',
+                   '11', '12', '13', '14', '15',
+                   '16', '17', '18', '19', '20',
+                   '21', '22', '23', '24', '25',
+                   '26', '27', '28', '29', '30',
+                   ],
+            'time': [
+                   '00:00', '01:00', '02:00', '03:00', '04:00',
+                   '05:00', '06:00', '07:00', '08:00', '09:00',
+                   '10:00', '11:00', '12:00', '13:00', '14:00',
+                   '15:00', '16:00', '17:00', '18:00', '19:00',
+                   '20:00', '21:00', '22:00', '23:00',
+                    ],
+            'area': [-18,20,15,20]
+        }
+    )
+    mean_data = ct.climate.climatology_mean(data, start='2000-03-01T00:00:00', stop='2007-03-30T23:00:00', frequency='month')
+    fig = ct.map.plot(mean_data)
+    return fig
+
+
+longitude=np.arange(-20,19,0.5),latitude=np.arange(5,20,0.5), method='nearest')
+pptn2 = pptn.sel(longitude=np.arange(-20,18,0.5),latitude=np.arange(0,20,0.5), method='nearest')
+
+-20.25,19.25,0.5,20.25
+
+-20,60,-40,40........... AFRICA LONG AND LAT BOX
